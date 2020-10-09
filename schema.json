@@ -1,0 +1,83 @@
+{
+	"fr": {
+		"2018-05-09": [{
+			"position": 10,
+			"title": "Don't Let Me Down",
+			"artists": "Conor Maynard",
+			"url": "https://www.spotontrack.com/track/don-t-let-me-down/1779346"
+		}, {
+			
+		}]
+	}
+}
+
+{
+	"fr": [{
+		"url": "https://www.spotontrack.com/track/don-t-let-me-down/1779346",
+		"date": "2018-05-09",
+		"position": 10,
+		"title": "Don't Let Me Down",
+		"artists": "Conor Maynard"
+	}, {
+
+	}]
+}
+
+{
+	"fr": {
+		"https://www.spotontrack.com/track/julien/41177241": {
+			"title": "Julien",
+			"bpm": 42,
+			"positions": [{
+				"date": "2018-09-26",
+				"position": 3
+			}, {
+				"date": "2018-10-03",
+				"position": 4
+			}, ...
+			]
+		},
+		"https://www.spotontrack.com/track/baisers-voles/40595594": {
+			...
+		},
+		...
+	},
+	"jazz": {
+		...
+	},
+	...
+}
+
+{
+	"*url*": {
+		"playlist": "**",
+		"title": "abc",
+		"bpm": 42,
+		"positions": [{
+			"date": "9999-99-99",
+			"position": 42
+		}]
+	}
+}
+
+{
+	"fr": {
+		"https://www.spotontrack.com/track/wizard-of-love-radio-edit/40201230": {
+			"BPM": 42,
+			"": ""
+		}
+	}
+	
+}
+
+{
+	"fr": {
+		"liveness": {
+			"standardDeviation": 42,
+			"mean": 57
+		},
+		"speechiness": {
+			
+		}
+	}
+}

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		<link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+		<link type="text/css" rel="stylesheet" href="css/Treant.css" media="screen,projection" />
+		<link type="text/css" rel="stylesheet" href="css/index.css"  />
+
+		<script src="main.js"></script>
+		<title>Data-Mining Project</title>
+	</head>
+	<body>
+
+		<h1>Projet de Data-Mining</h1>
+
+		<p>Dépôt github : <a href="https://github.com/aliegeois/data-mining-project/tree/master">https://github.com/aliegeois/data-mining-project/tree/master</a></p>
+		<h3>Objectifs du projet</h3>
+		<div class="rapport">
+			Étudier des données du site Spotify (<a href="https://www.spotify.com/fr/">https://www.spotify.com/fr/</a>) et disponible sur le site Spot On Track (<a href="http://www.spotontrack.com/">http://www.spotontrack.com/</a>).
+			<br />
+			Pour cela, nous avons choisi d’effectuer les calculs par l’intermédiaire du langage <b>JavaScript</b>, par goûts personnel, ainsi que pour sa facilité de prise de main ; mais également, et surtout, pour son aptitude à fournir des résultats agréables à lire via l’utilisation du navigateur.
+		</div>
+
+		<h3>Nettoyage des données</h3>
+		<div class="rapport">
+				Avant de pouvoir exploiter les données, un nettoyage a été nécessaire. Voici les opérations que nous avons dû exploiter afin de rendre le dataset exploitable :
+				<br />&nbsp;&nbsp;- <b>Suppression des \r apparaissant à la fin de chaque ligne</b> → le \r étant un caractère spécial, il nous a fallut modifier directement le buffer des caractères ascii avant de le passer au tableau, et supprimer tout les 13 (le code ascii du caractère \r)
+				<br />&nbsp;&nbsp;- <b>Suppression de la dernière ligne de chaque fichier (celle-ci étant vide)</b> → pop() sur les deux fichiers
+				<br />&nbsp;&nbsp;- <b>Gestion des guillemets :</b> toute les cellules du fichier playlist étaient entourés de guillemets, sauf celles correspondant aux positions. Ceux-ci auraient gêné la gestion ultérieure des données et devaient donc être gérés. De plus, les champs possédant des guillemets de base (comme la ligne 17169) trouvaient ceux-ci remplacés par de disgracieux \", il nous a donc fallut supprimer les \ dans ce cas de figure.
+				
+				<br /><br />Pour gérer tout cela, nous avons donc effectuer un pop sur les deux fichiers, et créer deux fonctions de normalisation. Chacune d’entre elle s’occupe de créer un buffer dans lequel on ajoute tout le contenu du fichier, sauf que que l’on désire enlever (respectivement les " inutiles et les \r). A noter que, pour le \r, il n’était pas possible de vérifier à partir du fichier sous forme de caractère car c’était un caractère spécial. Il nous a donc fallut itérer directement sur le buffer de caractère ascii généré par la librairie de lecture de fichier système.
+				
+				<br /><br /><b>Note</b> : nous pensons que l’apparition des \r dans un des deux fichiers viens du fait qu’un a été enregistré sur une architecture Windows NT, alors que l’autre l’a été sur une architecture Unix.
+				
+		</div>
+
+
+		<h3>Structure de données</h3>
+		<div class="rapport">
+			Afin de pouvoir travailler sur les données de manière sereine, nous avons choisi de créer une structure de données enregistrant toute les données à note disposition et étant itérable afin de pouvoir parcourir les données de cette manière, sans avoir à parcourir le tableau à chaque fois.
+				
+			<br /><br />Pour cela, nous avons tout d’abord envisagé et mis en place un système de Hashmap, mais nous avons fini par nous rendre compte que cela poserait problème avec le système de serveur que nous envisagions de mettre en place. En effet, la transmission des données entre le client et le serveur ne peut s’effectuer que sous format JSON ; nous avons donc décidé d’utiliser le même idée de Hashmap, mais avec une structure basée sur des objets natifs, ce qui nous donnes la structure de données suivantes :
+	
+
+
+			<p>Pour faciliter l'accès aux données, les 2 fichiers `playlists` et `tracks` sont fusionnés dans une seule structure de données.
+			Ceci est plus pratique pour accéder aux propriétés des musiques depuis la playlist.</p>
+			La structure de données utilisée est du JSON sous la forme suivante:
+
+			<pre class="codeSample">
+	"fr": {
+		"https://www.spotontrack.com/track/la-marcheuse/42943174": {
+			title: "La marcheuse",
+			<span class="comment">…</span>
+			positions: [{
+				date: 2018-09-26T00:00:00.000Z,
+				position: 2
+			}, {
+				date: 2018-10-03T00:00:00.000Z,
+				position: 3
+			}, <span class="comment">…</span>]
+		},
+		"https://www.spotontrack.com/track/mojo/43473376": {
+			<span class="comment">…</span>
+		},
+		<span class="comment">…</span>
+	},
+	"jazz": {
+		<span class="comment">…</span>
+	},
+	"lovepop": {
+		<span class="comment">…</span>
+	},
+	"electro": {
+		<span class="comment">…</span>
+	},
+	"metal": {
+		<span class="comment">…</span>
+	}
+			</pre>				
+
+			<p>Cette structure nous permet de séparer les différentes playlists, ainsi l'appel à `data.fr` renvoie toutes les chansons de la playlist fr.</p>
+			<p> Cette stratégie induit le fait que ces données seront dupliquées dans le cas où une musique est présent dans plusieurs playlist (puisque les données relatives à la musique sont associée à une playlist spécifique). Toutefois, après une étude de données, nous n’avons trouvé aucune occurrence d’une telle musique. Si elle existe, elle semble n’arriver que très rarement, et le nombre de duplications engendrées serra alors négligeable (et ne mettra pas en péril les opérations effectuées sur les données).</p>
+			<p>A ce stade, nous nous sommes dit que cette structure nous permettait d’y ajouter les données de tracks/ En effet, chacune est spécifique à un url et peut donc s’ajouter avec au coté du title. Nous avons donc ajouté les données de Dancabilité, valence…</p>
+
+
+			<pre class="codeSample">
+	"fr": {
+		"https://www.spotontrack.com/track/la-marcheuse/42943174": {
+			"title": "La marcheuse",
+			"artists": "Christine and the Queens",
+			"BPM": 107,
+			<span class="comment">…</span>
+			positions: [{
+				date: 2018-09-26T00:00:00.000Z,
+				position: 2
+			}, {
+				date: 2018-10-03T00:00:00.000Z,
+				position: 3
+			}, <span class="comment">…</span>]
+		},
+		"https://www.spotontrack.com/track/mojo/43473376": {
+			<span class="comment">…</span>
+		},
+		<span class="comment">…</span>
+	},
+	"jazz": {
+		<span class="comment">…</span>
+	},
+	"lovepop": {
+		<span class="comment">…</span>
+	},
+	"electro": {
+		<span class="comment">…</span>
+	},
+	"metal": {
+		<span class="comment">…</span>
+	}
+		</pre>
+		
+
+
+		<div class="code">
+		<h6><img src="images/gears.png" alt="Engrenages" /><div>Code</div></h6>
+		<p>La création des cette structure est comprise dans la fonction parseData</p>
+	</div>
+		Cette structure nous permet de séparer les différentes playlists, ainsi l'appel à `data.fr` renvoie toutes les chansons de la playlist fr.
+		
+
+
+		<h4>Traitement des caractères accentués</h4>
+		Une simple expression régulière règle ce problème. <pre>/\\u[0-9a-f]{4}/g</pre> détecte les codes des caractères accentués et il est en suite facile de les convertir.
+		</div>
+		
+
+
+		<!-- 2.1 -->
+		<h3>Préparation des données</h3>
+
+		<!-- 2.1.1 -->
+		<h4>Positions-pics</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>getPositionPic</span> dans server.js</div>
+		<div class="rapport">
+			<!-- Des fonctions requéttant le serveur pour trouver proprement les rapport via les .txt sont prêts dans le .js mais json ne permet pas de bien mettre en forme-->
+			<p>Afin de calculer la position-pic de chaque chanson, il nous suffit de parcourir la structure de données évoquées via des itérateurs natifs de JavaScript :</p>
+
+			<p>- Pour chaque playlist</p>
+			<p>&nbsp;- Pour chaque chanson de cette playlist</p>
+			<p>&nbsp;&nbsp;- On initialise la meilleure position à l’entier maximal</p>
+			<p>&nbsp;&nbsp;- Pour chaque position de cette chanson</p>
+			<p>&nbsp;&nbsp;&nbsp;- On modifie la meilleure position si la position trouvée est meilleure que la meilleure position-pic</p>
+			<p>- On retourne la structure adaptée</p>
+		</div>
+
+		<div class="code">
+			<h6><img src="images/gears.png" alt="Engrenages" /><div>Code</div></h6>
+			<p>En JavaScript, nous parcourons notre structure avec des for de cette manière :</p>
+			<div class="codeSample">
+					for(let [playlist, songs] of Object.entries(data)) { <br />
+						&nbsp;&nbsp;<span class="comment">// Du code utilisant playlist et/ou songs</span> <br />
+					} <br />
+			</div>
+			<p>Si data est, par exemple, de cette forme :</p>
+			<div class="codeSample">
+					"fr": {<br />
+						&nbsp;&nbsp;"url1": {<br />
+							&nbsp;&nbsp;&nbsp;&nbsp;	<span class="comment">…</span><br />
+						&nbsp;&nbsp;}, "url2": {<br />
+							&nbsp;&nbsp;&nbsp;&nbsp;	<span class="comment">…</span><br />
+						&nbsp;&nbsp;},<br />
+						&nbsp;&nbsp;<span class="comment">…</span><br />
+					},<br />
+					"electro": {<br />
+						&nbsp;&nbsp;<span class="comment">…</span><br />
+					},<br />
+					<span class="comment">…</span><br />
+			</div>
+			<p>Nous aurons alors, pour le premier tour de boucle, playlist = « fr » et songs égal à la structure contenant url1, url2... (chaque url étant alors itérable de la même manière). Au deuxième tour nous aurons playlist = « electro »…</p>
+			<p>Il est également possible de ne récupérer que playlist en utilisant key au lieu entries, et uniquement songs en utilisant plutôt values.</p>
+		</div>
+		<div class="question">
+			<a id="question2_1_1" class="waves-effect btn buttons">Positions-pic</a>
+		</div>
+		<div id="resultQuestion2_1_1" class="center-align result"></div>
+
+
+
+
+
+		<!-- 2.1.2 -->
+		<h4>Positions-pic inférieures à 15</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span> getIsTop15</span> dans server.js</div>
+		<div class="rapport">
+			<p>Pour associer un booléen à chaque chanson indiquant si elle a été au moins une fois au dessus de la 15ème position dans une playlist, nous parcourons simplement le tableau de positionPic issu de la question précédente avec le même type d’itérateur que défini plus haut et associons un booléen à l’url selon que la position moyenne qui lui est associé est inférieure à 15 ou non.</p>
+		</div>
+		<div class="question">
+			<a id="question2_1_2" class="waves-effect btn buttons">Positions-pic inférieures à 15</a>
+		</div>
+		<div id="resultQuestion2_1_2" class="center-align result"></div>
+
+
+		<!-- 2.1.3 -->
+		<h4>Durée pendant laquelle la chanson est apparue dans la playlist</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>getTimeAppeared</span> dans server.js</div>
+		<div class="rapport">
+			<p>La structure de données choisie est particulièrement utile pour calculer cette statistique : en effet, nous avons déjà pour chaque chanson, un tableau contenant toutes ces positions avec les dates associées. Nous pouvons donc simplement parcourir notre structure et, pour chaque chanson, lui associer la taille de son tableau de positions.</p>
+		</div>
+		<div class="question">
+				<a id="question2_1_3" class="waves-effect btn buttons">Durée d'apparition</a>
+		</div>
+		<div id="resultQuestion2_1_3" class="center-align result"></div>
+		
+
+		<!-- 2.1.4 -->
+		<h4>Position moyenne de la chanson dans la playlist</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>getMeanPositions</span> dans server.js</div>
+		<div class="rapport">
+			<p>Pour réaliser cette statistique, nous parcourons à nouveau notre structure avec les opérateur utilisées pour les questions précédente. Encore une fois, seul l’opération effectuée avec la liste des postions change : ici, nous parcourons le tableau pour réaliser la sommes des positions et divisons par la taille du tableau de positions.</p>
+			<p>A noter que nous avons choisi, par goûts personnel d’utiliser un reduce afin de sommer les éléments du tableau, mais il es tout à fait possible de réaliser un for classique.</p>
+		</div>
+		<div class="question">
+				<a id="question2_1_4" class="waves-effect btn buttons">Position moyenne</a>
+		</div>
+		<div id="resultQuestion2_1_4" class="center-align result"></div>
+
+		<!-- 2.1.5 -->
+		<h4>Position moyenne inférieures à 15</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>getMeanPosInf15</span> dans server.js</div>
+		<div class="rapport">
+			<p>Pour calculer cette statistique, nous utilisons le même procédé que pour déterminer si la position-pic est inférieure à 15, mais utilisons cette fois-ci ce que nous renvoie la fonction getMeanPositions.</p>
+		</div>
+		<div class="question">
+				<a id="question2_1_5" class="waves-effect btn buttons">Positions moyennes inférieures à 15</a>
+		</div>
+		<div id="resultQuestion2_1_5" class="center-align result"></div>
+
+
+
+
+
+
+
+
+		<!-- 2.2 -->
+		<h3>Analyse Exploratoire</h3>
+		<p>Certains données ne sont pas adaptées pour l’analyse : il s’agit de le key et le mode. En effet, ces derniers son des variables catégorique, il faut donc les transformer.</p>
+		<p><b>Transformation du mode :</b> le mode ne peut prendre que deux valeurs : Minor ou Major. Nous avons donc pu <b>transformer cette variable en booléen</b> : 1 pour un mode majeur et 0 pour un mode mineur</p>
+		<p><b>Transformation de la key :</b> la key en revanche peut prendre énormément de valeurs (12). Pour régler ce problème, il nous faut <b>créer une colonne pour chaque valeur possible</b> ; colonne pouvant prendre comme valeur soit 1 (si la key est bien de cette valeur), soit 0 (si elle ne l’est). Chaque musique possédera donc une colonne à 1, et 11 colonnes à 0.</p>
+		<img src="images/modificationKey.png" alt="Mdofication de la key" class="img_rapport" />
+		<p>Afin de pouvoir effectuer des calculs intéressant, il nous faut avoir accès à des données telles que la moyenne pour chaque variable, l’écart-type… Le JavaScript natif ne proposant pas de telles fonctionnalités, il nous a fallut réaliser des fonctions calculant ces statistiques à la main. L’idée est assez simple : nous parcourons notre structure de données et utilisons les formules classiques de moyenne, écart-type… </p>
+
+		<div class="code">
+			<h6><img src="images/gears.png" alt="Engrenages" /><div>Code</div></h6>
+			<p>Le calcul de ces statistiques est défini dans la fonction getStats.</p>
+			<p>Nous avons codé celle-ci de manière à ce qu’elle renvoi un objet contenant pour chaque playlist, pour chaque variable toutes les statistiques associées (moyenne, écart-type, variance...)</p>
+		</div>
+
+
+
+		<!-- 2.2.1 -->
+		<h4>Analyse descriptive 2D</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>getTimeAppeared</span> dans server.js</div>
+		<div class="rapport">
+			
+		</div>
+		<div class="question">
+			<p>Liste des variables, dans l'ordre: BPM, Mode, Danceability, Valence, Energy, Acousticness, Instrumentalness, Liveness et Speechiness</p>
+			<a id="question2_2_1" class="waves-effect btn buttons">Analyse</a>
+		</div>
+		<div id="resultQuestion2_2_1" class="center-align"></div>
+		<div>
+			Lors de la comparaison des variables entre elles en remarque qu'il existe très peu de correlation entre elles, si ce n'est pour le BPM où des semblants de lignes se forment.
+			Ceci indique que les variables sont très peu liées entre elles.
+		</div>
+
+		<!-- 2.2.2 -->
+		<h4>Profil de la chanson moyenne pour chaque playlist</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>getMeanMusics</span> dans server.js</div>
+		<div class="rapport">
+			<p>En réalisant la moyenne sur chaque valeur pour toute les chansons d’un playlist, nous pouvons établir le profil type de la chanson de la playlist (c’est celle ayant toutes ses valeurs égales à la moyenne).</p>
+			<p>Pour réaliser cela, nous récupérons les données renvoyées par getStats et ne considérons que les moyennes associées à la playlist de notre choix. Nous ne pouvons malheureusement pas renvoyer directement les moyennes comme cela à cause des 12 colonnes de key. En effet, celle-ci ont une moyenne entre 0 et 1 (et plus proche de 0 car uniquement 1 variables sur 12 est égal à 1 à chaque fois). Hors, une musique, même moyenne, ne peut avoir que des 0 ou des 1 pour cette variable. Nous avons donc choisi de trouver la colonne key avec la valeur moyenne la plus haute, de mettre à 1 la colonne key de la chanson moyenne de cette key, et de mettre toutes les autres à 0.</p>
+			<p>De cette manière, nous pouvons établir le profil type de la chanson moyenne.</p>
+			<img src="images/meanMusic.PNG" alt="Mean Music" class="img_rapport" />
+			<p>Pour calculer les chansons les plus proches de ces chansons types, nous calculons la distance euclidienne des musiques par rapport à la chansons moyenne. Toutefois, à ce stade, les variables n’étaient pas utilisables pour faire des statistiques avancées car elles n’étaient pas comparables : le BPM, par exemple, peut aisément monter à plus de 100 alors que les variables définies si dessous ne peuvent intrinsèquement pas dépasser 1. Il nous faut donc réaliser une normalisation sur les variables afin de pouvoir calculer des distances euclidiennes.</p>
+			<p>Méthode de normalisation : Pour chaque valeur, nous lui soustrayons la moyenne afin qu’elles soient toutes centrées autour de 0, puis nous divisons par l’écart type afin que toutes les variables soient dans un intervalle à la même échelle.</p>
+			<p>Nous avons donc dû pour cela créer des bouts de codes s’occupant de calculer la moyenne pour chaque valeur (sommes toute les valeurs et divise par la taille du tableau associé) et l’écart type (explications), puis normalisant les valeurs grâce aux statistiques trouvées.</p>
+		</div>
+		<div class="question">
+			<a id="question2_2_2" class="waves-effect btn buttons">Profil de la chanson moyenne</a>
+			<a id="question2_2_2_closest" class="waves-effect btn buttons">Chanson les plus proches</a>
+		</div>
+		<div id="resultQuestion2_2_2" class="center-align result"></div>
+
+
+		<!-- 2.2.3 -->
+		<h4>Chanson avec la meilleure position moyenne pour chaque playlist</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>getBestMeanPositionSong</span> dans server.js</div>
+		<div class="rapport">
+			<p>La chanson la mieux classée  au sens de la position moyenne est définie comme la musique est la position moyenne la plus faible. Pour cela, nous utilisons la structure indiquant pour chaque playlist, pour chaque url sa position moyenne (celle-ci est calculée par la fonction getMeanPositions).</p>
+			<p>Nous parcourons donc la structure et, pour chaque playlist, parcourons toutes les musique et gardons celle avec la position moyenne la plus basse. Nous renvoyons finalement l’objet associant la playlist à sa « meilleure musique ».</p>
+		</div>
+		<div class="question">
+			<a id="question2_2_3" class="waves-effect btn buttons">Meilleures positions moyennes</a>
+		</div>
+		<div id="resultQuestion2_2_3" class="center-align result"></div>
+
+
+		<!-- 2.2.4 -->
+		<h4>Evolution de la position d'une chanson au fil du temps</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>getSongEvolution</span> dans server.js</div>
+		<div class="rapport">
+			<p>La structure de données avec laquelle nous travaillons associe déjà une musique avec la liste de ses positions au fil du temps. La fonction retournant la liste des positions d’une musique (associée aux dates correspondantes) est donc triviale : nous nous contentons de retourner le champs « positions » associé à la playlist et à la musique demandées :</p>
+			<div class="codeSample">
+				return Object.values(data[playlist_name][song].positions);
+			</div>
+		</div>
+		<div class="question">
+			<a id="question2_2_4" class="waves-effect btn buttons">Evolution de la position moyenne d'une chanson</a>
+			<select id="question2_2_4_select">
+				<optgroup label="fr">
+					<option value="https://www.spotontrack.com/track/assassine-de-la-nuit/36729603">Assssine de la nuit (https://www.spotontrack.com/track/assassine-de-la-nuit/36729603)</option>
+				</optgroup>
+				<optgroup label="jazz">
+					<option value="https://www.spotontrack.com/track/i-got-it-bad-and-that-ain-t-good/361744">I Got It Bad And That Anin't Good (https://www.spotontrack.com/track/i-got-it-bad-and-that-ain-t-good/361744)</option>
+				</optgroup>
+				<optgroup label="lovepop">
+					<option value="https://www.spotontrack.com/track/wasn-t-expecting-that/2230">Wasn't Expecting That (https://www.spotontrack.com/track/wasn-t-expecting-that/2230)</option>
+				</optgroup>
+				<optgroup label="electro">
+					<option value="https://www.spotontrack.com/track/ohm/40765440">Ohm (https://www.spotontrack.com/track/ohm/40765440)</option>
+				</optgroup>
+				<optgroup label="metal">
+					<option value="https://www.spotontrack.com/track/twilight-of-the-thunder-god/1117533" selected>Twilight Of The Thunder God (https://www.spotontrack.com/track/twilight-of-the-thunder-god/1117533)</option>
+				</optgroup>
+			</select>
+		</div>
+		<div id="resultQuestion2_2_4" class="center-align chart"></div>
+
+		<!-- 2.3 -->
+		<h3>Analyse exploratoire multidimensionnelle</h3>
+
+		A partir de ce stade, nous ne pouvions plus réaliser les opérations "à la main", tels de réalisées précédemment.
+		Nous avons donc choisi d'utiliser des bibliothèques javascript adaptées pour cela. Les bibliothèques en question sont importées dans les premières lignes
+		de <b>server.js</b> et sont <b>pca-js</b> (pour réaliser une acp), <b>ml-cart</b> (pour réaliser des arbres de décision), <b>ml-regression-multivariate-linear</b> (pour
+		la régression linéaire) et <b>ml-cross-validation</b> (pour la cross-validation)
+
+		<!-- 2.3.1 -->
+		<h4>Analyse en composante principale</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>acp</span> dans server.js</div>
+		<div class="rapport">
+			<p>On a actuellement 21 variables différentes (dont 12 uniquement pour la key). On désire désormais pouvoir projeter les  chansons décrites par toutes ces variables sur un plan. Un plan étant en deux dimensions, il nous faut donc effectuer une réduction de dimensions afin de passer de 21 variables à 2. Il convient donc de déterminer les deux dimensions à garder, ou s’il faut créer deux dimensions représentant une agrégation des autres variables.</p>
+			<p>Nous pourrions réaliser cela à la main, et ne garder, par exemple, que les deux dimensions avec la plus grande variance. Toutefois, cette modèle ne sont semble pas satisfaisante, pas trop imprécis et ne rendant pas réellement compte de l’impact que peuvent l’avoir les variables sur une chansons.</p>
+			<p>Nous avons donc décidé d'utiliser la bibliothèque <b>pca-js</b> réalisant l'ACP en créant deux dimensions adéquates pour représenter les chansons sur un plan</p>
+		</div>
+		<div class="question">
+			<a id="question_2_3" class="waves-effect btn buttons">ACP</a>
+			<canvas id="c_2_3"></canvas>
+		</div>
+		<div class="rapport">
+			<p>
+				L'ACP donne des résultats très particuliers puisqu'on obtient graphiquement 2 ensembles séparés.
+				Ceci est probablement dû au Mode qui prend une valeur binaire et qui sépare distinctement toutes les musiques ayant un mode majeur de celles ayant un mode mineur.
+				Les 2 ensembles ont visiblement la même allure, ce qui laisse supposer que le mode n'a que peu d'influence sur les autres variables : chaque cluster représente simplement un des deux modes. 
+			</p>
+		</div>
+
+
+		<!-- 2.4 -->
+		<h3>Analyse prédictive</h3>
+
+
+		<!-- 2.4.1 -->
+		<h4>Arbre de décision</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>predictPlaylist</span> dans server.js</div>
+		<div class="rapport">
+			Pour cette partie nous avons utilisé un arbre de décision, qui donne des résultats graphiques faciles à comprendre.
+			Nous analysons l'intégralité des playlists pour tenter de les prédire.
+			Le dataset est d'abord coupé en 2 morceaux: 80% pour l'entrainement et 20% pour le test.
+			L'arbre de décision se construit à partir des données d'entrainement puis on teste son efficacité sur les données de test.
+			Avec une précision moyenne de ~65% l'arbre ne donne pas de bons résultats, néanmoins il explique clairement le modèle.
+			C'est quasiment toujours l'instrumentalness qui est choisie comme 1ère variable de découpe.
+			L'arbre est généré avec une profondeur maximale de 10 même s'il ne dépasse jamais cette limite
+		</div>
+		<div class="question">
+			<a id="question2_4_1" class="waves-effect btn buttons">Arbre de décision</a>
+		</div>
+		<div id="resultQuestion2_4_1" class="center-align result"></div>
+		<div id="question2_4_1tree"></div>
+
+		<!-- 2.4.2 -->
+		<h4>Régression linéaire</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>linearRegression</span> dans server.js</div>
+		<div class="rapport">
+			Pour prédire la postion d'une playlist nous avons utilisé un régresseur linéaire. Nous tentons de prédire la durée pendant laquelle une chanson va rester dans la playlist.
+			Le régresseur calcule un poids à affecter à chaque variable et effectue une somme pondérée avec les variables descriptives pour prédire la position.
+			Nous utilisons la mesure R2 pour avoir une idée de la performance du modèle.
+			R2 varie beaucoup selon le jeu de test utilisé, mais puisqu'il est tiré au hasard nous ne savons pas exactement sous quelles conditions la mesure évolue.
+			En moyenne, R2 vaut 0.21, une valeur très mauvaise pour la prédiction.
+			Ceci indique qu'il semble vain de tenter de prédire la position d'une chanson en fonction de ses caractéristiques.
+			Les variables récoltées sont probablement insuffisantes pour ce genre de prédiction.
+			Outre cela, si la popularité d'une musique dépendait de paramètres aussi simples, les maisons d'éditions l'aurait compris depuis longtemps.
+		</div>
+		<div class="question">
+			<a id="question2_4_2" class="waves-effect btn buttons">Régression linéaire</a>
+		</div>
+		<div id="resultQuestion2_4_2" class="center-align result"></div>
+
+		<script type="text/javascript" src="js/materialize.min.js"></script>
+		<script type="text/javascript" src="js/chart.min.js"></script>
+		<script type="text/javascript" src="js/Treant.js"></script>
+		<script type="text/javascript" src="js/raphael.js"></script>
+	</body>
+</html>
